@@ -1,6 +1,6 @@
 import re
 
-from icutils.data import DataIterator
+from icutk.data import DataIterator
 
 
 STRINGS = """\

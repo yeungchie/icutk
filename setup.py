@@ -4,11 +4,11 @@ import sys
 
 sys.path.insert(0, ".")
 
-import icutils
+import icutk
 
-VERSION = icutils.__version__
-DESCRIPTION = "Integrated Circuit Utilities"
-PROJECT = "icutils"
+VERSION = icutk.__version__
+DESCRIPTION = "Integrated Circuit Utilities (kit)"
+PROJECT = "icutk"
 AUTHOR = "YEUNGCHIE"
 
 setup(
@@ -26,6 +26,7 @@ setup(
         PROJECT,
         "ic",
         "utils",
+        "kit"
         "linux",
     ],
     classifiers=[
