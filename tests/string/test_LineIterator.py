@@ -1,6 +1,6 @@
 import re
 
-from icutk.data import DataIterator
+from icutk.string import LineIterator
 
 
 STRINGS = """\
@@ -16,17 +16,17 @@ STRINGS = """\
 
 class TestDataIterator:
     def test_next(self):
-        di = DataIterator(STRINGS)
+        di = LineIterator(STRINGS)
         for s in STRINGS:
             assert di.next == s
 
     def test_chomp(self):
-        di = DataIterator(STRINGS, chomp=True)
+        di = LineIterator(STRINGS, chomp=True)
         for s in STRINGS:
             assert di.next == re.sub(r"\n$", "", s)
 
     def test_last(self):
-        di = DataIterator(STRINGS, chomp=True)
+        di = LineIterator(STRINGS, chomp=True)
         next_count = 3
         for _ in range(next_count):
             di.next
@@ -42,7 +42,7 @@ class TestDataIterator:
         ]
 
     def test_revert(self):
-        di = DataIterator(STRINGS, chomp=True)
+        di = LineIterator(STRINGS, chomp=True)
         next_count = 3
         for _ in range(next_count):
             di.next
