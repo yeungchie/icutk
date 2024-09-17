@@ -26,7 +26,7 @@ setup(
         PROJECT,
         "ic",
         "utils",
-        "kit"
+        "kit",
         "linux",
     ],
     classifiers=[
