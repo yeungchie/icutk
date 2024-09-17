@@ -14,8 +14,6 @@ __all__ = [
     "Disposable",
 ]
 
-COMMENT = "qweqwewqe"
-
 
 class Popen(_Popen):
     """
