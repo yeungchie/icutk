@@ -2,6 +2,7 @@ from typing import List, Optional, Union, Sequence
 from subprocess import Popen as _Popen, PIPE, TimeoutExpired, CompletedProcess
 from abc import ABC, abstractmethod
 from queue import Queue
+
 from select import select
 from threading import Thread, Event
 from time import sleep
@@ -44,7 +45,7 @@ class Popen(_Popen):
             raise ChildProcessError("Process failed to start")
 
         def reader(self: __class__, handleType: str) -> None:
-            def oneline(res):
+            def oneline(res: str):
                 if res != "":
                     queue.put(res)
                     if self.verbose:
@@ -145,7 +146,7 @@ class Popen(_Popen):
 
     def recv(
         self,
-        targets: Sequence[str],
+        targets: Union[str, Sequence[str]],
         heads: Optional[list] = None,
         targets_regex: bool = False,
         targets_case: bool = False,
@@ -154,7 +155,9 @@ class Popen(_Popen):
     ) -> List[str]:
         if targets is None:
             raise ValueError("targets is None")
-        elif not isinstance(targets, list):
+        elif isinstance(targets, Sequence):
+            targets = list(targets)
+        else:
             targets = [targets]
         if len(targets) < 1:
             raise ValueError("targets is empty")
