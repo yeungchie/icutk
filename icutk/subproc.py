@@ -2,12 +2,17 @@ from typing import List, Optional, Union, Sequence
 from subprocess import Popen as _Popen, PIPE, TimeoutExpired, CompletedProcess
 from abc import ABC, abstractmethod
 from queue import Queue
-
-from select import select
 from threading import Thread, Event
 from time import sleep
+import sys
 
 from .string import startswith
+
+if sys.platform == "win32":
+    from select import select
+else:
+    from fcntl import F_GETFL, F_SETFL, fcntl
+    from os import O_NONBLOCK
 
 __all__ = [
     "Popen",
@@ -53,14 +58,21 @@ class Popen(_Popen):
             handle = getattr(self, handleType)
             queue = getattr(self, f"{handleType}_queue")
 
+            if sys.platform == "linux":
+                flags = fcntl(handle, F_GETFL)
+                fcntl(handle, F_SETFL, flags | O_NONBLOCK)
+
             while True:
                 if self.thread_event.is_set():
                     break
                 if handle.closed:
                     break
-                read, _, _ = select([handle], [], [], 0.1)
-                if not read:
-                    continue
+
+                if sys.platform == "win32":
+                    read, _, _ = select([handle], [], [], 0.1)
+                    if not read:
+                        continue
+
                 if self.poll() is not None:
                     map(oneline, handle.readlines())
                     break
