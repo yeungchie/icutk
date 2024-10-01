@@ -21,7 +21,9 @@ setup(
     url=f"https://github.com/{AUTHOR.lower()}/{PROJECT}",
     packages=find_packages(exclude=["tests"]),
     python_requires=">=3.7",
-    install_requires=[],
+    install_requires=[
+        "ply>=3.11",
+    ],
     keywords=[
         PROJECT,
         "ic",
