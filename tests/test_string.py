@@ -14,7 +14,7 @@ STRINGS = """\
 """.splitlines(keepends=True)
 
 
-class TestDataIterator:
+class TestLineIterator:
     def test_next(self):
         di = LineIterator(STRINGS)
         for s in STRINGS:
