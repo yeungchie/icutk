@@ -1,4 +1,4 @@
-from icutk.ply.lex import BaseLexer
+from icutk.lex import BaseLexer
 
 
 code = """\
