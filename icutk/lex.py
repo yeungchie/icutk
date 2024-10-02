@@ -1,6 +1,11 @@
-from typing import Iterable, Optional, Union
+from typing import Iterable, Optional, Union, Dict
 import ply.lex as lex
 import logging
+
+__all__ = [
+    "BaseLexer",
+    "tokensToDict",
+]
 
 
 class BaseLexer:
@@ -118,3 +123,11 @@ class BaseLexer:
         if t is None:
             raise StopIteration
         return t
+
+
+def tokensToDict(tokens: Iterable) -> dict:
+    td: Dict[str, list] = {}
+    for t in tokens:
+        td.setdefault(t.type, [])
+        td[t.type].append(t)
+    return td
