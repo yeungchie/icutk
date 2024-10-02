@@ -1,11 +1,25 @@
-from typing import Iterable, Optional, Union, Dict
+from typing import Iterable, List, Optional, Union, Dict, Any
+from dataclasses import dataclass
 import ply.lex as lex
 import logging
 
 __all__ = [
+    "LexToken",
     "BaseLexer",
     "tokensToDict",
 ]
+
+
+@dataclass
+class LexToken(lex.LexToken):
+    lexer: lex.Lexer
+    type: str
+    value: Any
+    lineno: int
+    lexpos: int
+
+    def __repr__(self) -> str:
+        return super().__repr__()
 
 
 class BaseLexer:
@@ -113,10 +127,19 @@ class BaseLexer:
         self.lexer.input(s)
 
     def __iter__(self):
-        return self.lexer
+        return self
 
     def token(self):
-        return self.lexer.token()
+        t = self.lexer.token()
+        if t is None:
+            return None
+        return LexToken(
+            lexer=self.lexer,
+            type=t.type,
+            value=t.value,
+            lineno=t.lineno,
+            lexpos=t.lexpos,
+        )
 
     def __next__(self):
         t = self.token()
@@ -125,8 +148,8 @@ class BaseLexer:
         return t
 
 
-def tokensToDict(tokens: Iterable) -> dict:
-    td: Dict[str, list] = {}
+def tokensToDict(tokens: Iterable[LexToken]) -> Dict[str, List[LexToken]]:
+    td: Dict[str, List[LexToken]] = {}
     for t in tokens:
         td.setdefault(t.type, [])
         td[t.type].append(t)
