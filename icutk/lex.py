@@ -4,10 +4,13 @@ import ply.lex as lex
 import logging
 
 __all__ = [
+    "TOKEN",
     "LexToken",
     "BaseLexer",
     "tokensToDict",
 ]
+
+TOKEN = lex.TOKEN
 
 
 @dataclass
