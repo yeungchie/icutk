@@ -6,6 +6,7 @@ import logging
 __all__ = [
     "TOKEN",
     "LexToken",
+    "MetaLexer",
     "BaseLexer",
     "tokensToDict",
 ]
@@ -25,7 +26,58 @@ class LexToken(lex.LexToken):
         return super().__repr__()
 
 
-class BaseLexer:
+class MetaLexer:
+    def __new__(cls, *args, **kwargs):
+        if cls is MetaLexer:
+            raise TypeError("BaseLexer cannot be instantiated")
+        return super().__new__(cls)
+
+    t_ignore = " \t"
+
+    def t_NEWLINE(self, t):
+        r"\n+"
+        t.lexer.lineno += len(t.value)
+
+    def t_error(self, t):
+        logging.warning(f"Illegal character {repr(t.value[0])}")
+        t.lexer.skip(1)
+
+    def __init__(self, data: Optional[Union[str, Iterable[str]]] = None) -> None:
+        self.lexer = lex.lex(module=self)
+        if data is not None:
+            if isinstance(data, str):
+                self.lexer.input(data)
+            elif isinstance(data, Iterable):
+                self.lexer.input("".join(data))
+            else:
+                raise TypeError("data must be str or iterable of str")
+
+    def input(self, s: str) -> None:
+        self.lexer.input(s)
+
+    def __iter__(self):
+        return self
+
+    def token(self):
+        t = self.lexer.token()
+        if t is None:
+            return None
+        return LexToken(
+            lexer=self.lexer,
+            type=t.type,
+            value=t.value,
+            lineno=t.lineno,
+            lexpos=t.lexpos,
+        )
+
+    def __next__(self):
+        t = self.token()
+        if t is None:
+            raise StopIteration
+        return t
+
+
+class BaseLexer(MetaLexer):
     tokens = [
         "PAREN_OPEN",  # (
         "PAREN_CLOSE",  # )
@@ -96,8 +148,6 @@ class BaseLexer:
     t_QUESTION = r"\?"
     t_WORD = r"\w+"
 
-    t_ignore = " \t"
-
     def t_INT(self, t):
         r"\d+(?!\.)"
         t.value = int(t.value)
@@ -106,48 +156,6 @@ class BaseLexer:
     def t_FLOAT(self, t):
         r"\d+\.\d+"
         t.value = float(t.value)
-        return t
-
-    def t_NEWLINE(self, t):
-        r"\n+"
-        t.lexer.lineno += len(t.value)
-
-    def t_error(self, t):
-        logging.warning(f"Illegal character {repr(t.value[0])}")
-        t.lexer.skip(1)
-
-    def __init__(self, data: Optional[Union[str, Iterable[str]]] = None) -> None:
-        self.lexer = lex.lex(module=self)
-        if data is not None:
-            if isinstance(data, str):
-                self.lexer.input(data)
-            elif isinstance(data, Iterable):
-                self.lexer.input("".join(data))
-            else:
-                raise TypeError("data must be str or iterable of str")
-
-    def input(self, s: str) -> None:
-        self.lexer.input(s)
-
-    def __iter__(self):
-        return self
-
-    def token(self):
-        t = self.lexer.token()
-        if t is None:
-            return None
-        return LexToken(
-            lexer=self.lexer,
-            type=t.type,
-            value=t.value,
-            lineno=t.lineno,
-            lexpos=t.lexpos,
-        )
-
-    def __next__(self):
-        t = self.token()
-        if t is None:
-            raise StopIteration
         return t
 
 

@@ -3,9 +3,36 @@ from queue import LifoQueue
 import re
 
 __all__ = [
+    "evalToBasicType",
     "startswith",
     "LineIterator",
 ]
+
+
+def evalToBasicType(s: str) -> Union[str, int, float]:
+    """
+    Evaluate a string to a basic type (str, int, float)
+    """
+    if not isinstance(s, str):
+        raise TypeError("Input must be a string")
+    s = s.strip()
+    if re.fullmatch(r"\"[^\"]*\"", s):
+        # "string"
+        value = s[1:-1]
+    elif re.fullmatch(r"\'[^']*\'", s):
+        # 'string'
+        value = s[1:-1]
+    elif re.fullmatch(r"\d+", s):
+        # 123
+        value = int(s)
+    elif re.fullmatch(r"\d*\.\d+|\d+\.", s):
+        # 1.23
+        # .23
+        # 1.
+        value = float(s)
+    else:
+        value = s
+    return value
 
 
 def startswith(
