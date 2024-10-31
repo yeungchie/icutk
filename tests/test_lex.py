@@ -11,31 +11,27 @@ code = """\
 7 - .ENDS
 """
 
+lexer = BaseLexer()
+lexer.input(code)
+tokens = list(lexer)
+
 
 class TestBaseLexer:
-    def test_lexer(self):
-        lexer = BaseLexer()
-        lexer.input(code)
-        tokens = list(lexer)
+    def test_token_len(self):
         assert len(tokens) == 112
-        assert {t.type for t in tokens} == {
-            "DOT",
-            "ASTERISK",
-            "WORD",
-            "MINUS",
-            "EQUAL",
-            "COLON",
-            "INT",
-        }
 
+    def test_token_types(self):
+        assert {t.type for t in tokens} == {"*", "-", ".", ":", "=", "ID", "INT"}
+
+    def test_token_values(self):
         assert tokens[0].type == "INT"
         assert tokens[0].value == 1
 
-        assert tokens[1].type == "MINUS"
+        assert tokens[1].type == "-"
         assert tokens[1].value == "-"
 
-        assert tokens[2].type == "DOT"
+        assert tokens[2].type == "."
         assert tokens[2].value == "."
 
-        assert tokens[3].type == "WORD"
+        assert tokens[3].type == "ID"
         assert tokens[3].value == "SUBCKT"

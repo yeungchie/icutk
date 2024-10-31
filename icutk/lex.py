@@ -1,22 +1,27 @@
-from typing import Iterable, List, Optional, Union, Dict, Any
+from io import TextIOWrapper
+from typing import Callable, Iterator, Optional, Union, Any
 from dataclasses import dataclass
-import ply.lex as lex
-import logging
+
+from ply.lex import (
+    LexToken as _LexToken,
+    TOKEN,
+    Lexer,
+    lex,
+)
+
 
 __all__ = [
     "TOKEN",
     "LexToken",
     "MetaLexer",
     "BaseLexer",
-    "tokensToDict",
+    # "tokensToDict",
 ]
-
-TOKEN = lex.TOKEN
 
 
 @dataclass
-class LexToken(lex.LexToken):
-    lexer: lex.Lexer
+class LexToken(_LexToken):
+    lexer: Lexer
     type: str
     value: Any
     lineno: int
@@ -34,43 +39,54 @@ class MetaLexer:
 
     t_ignore = " \t"
 
-    def t_NEWLINE(self, t):
-        r"\n+"
-        t.lexer.lineno += len(t.value)
-
     def t_error(self, t):
-        logging.warning(f"Illegal character {repr(t.value[0])}")
         t.lexer.skip(1)
 
-    def __init__(self, data: Optional[Union[str, Iterable[str]]] = None) -> None:
-        self.lexer = lex.lex(module=self)
+    def __init__(
+        self,
+        data: Optional[str] = None,
+        *,
+        cb_input: Optional[Callable] = None,
+        cb_token: Optional[Callable] = None,
+    ):
+        self.lexer = lex(module=self, debug=False)
+        self.lexer.callback = {
+            "input": cb_input if callable(cb_input) else None,
+            "token": cb_token if callable(cb_token) else None,
+        }
         if data is not None:
-            if isinstance(data, str):
-                self.lexer.input(data)
-            elif isinstance(data, Iterable):
-                self.lexer.input("".join(data))
-            else:
-                raise TypeError("data must be str or iterable of str")
+            self.input(data)
 
-    def input(self, s: str) -> None:
-        self.lexer.input(s)
+    def input(self, data: Union[str, TextIOWrapper]):
+        if isinstance(data, str):
+            pass
+        elif isinstance(data, TextIOWrapper):
+            data = data.read()
+        else:
+            raise TypeError("data must be str or TextIOWrapper")
+        self.lexer.input(data)
+        if self.lexer.callback["input"] is not None:
+            self.lexer.callback["input"](lexer=self.lexer)
 
-    def __iter__(self):
-        return self
-
-    def token(self):
+    def token(self) -> Optional[LexToken]:
         t = self.lexer.token()
         if t is None:
             return None
-        return LexToken(
+        t = LexToken(
             lexer=self.lexer,
             type=t.type,
             value=t.value,
             lineno=t.lineno,
             lexpos=t.lexpos,
         )
+        if self.lexer.callback["token"] is not None:
+            self.lexer.callback["token"](lexer=self.lexer, token=t)
+        return t
 
-    def __next__(self):
+    def __iter__(self) -> Iterator[LexToken]:
+        return self
+
+    def __next__(self) -> LexToken:
         t = self.token()
         if t is None:
             raise StopIteration
@@ -79,89 +95,27 @@ class MetaLexer:
 
 class BaseLexer(MetaLexer):
     tokens = [
-        "PAREN_OPEN",  # (
-        "PAREN_CLOSE",  # )
-        "BRACKET_OPEN",  # [
-        "BRACKET_CLOSE",  # ]
-        "BRACE_OPEN",  # {
-        "BRACE_CLOSE",  # }
-        "ANGLE_OPEN",  # <
-        "ANGLE_CLOSE",  # >
-        "PLUS",  # +
-        "MINUS",  # -
-        "ASTERISK",  # *
-        "SLASH",  # /
-        "EQUAL",  # =
-        "BACKTICK",  # `
-        "TILDE",  # ~
-        "EXCLAMATION",  # !
-        "AT",  # @
-        "HASH",  # #
-        "DOLLAR",  # $
-        "PERCENT",  # %
-        "CARET",  # ^
-        "AMPERSAND",  # &
-        "BACKSLASH",  # \
-        "PIPE",  # |
-        "SEMICOLON",  # ;
-        "COLON",  # :
-        "APOSTROPHE",  # '
-        "QUOTATION",  # "
-        "COMMA",  # ,
-        "DOT",  # .
-        "QUESTION",  # ?
-        "INT",  # 10
+        "ID",  # abc
         "FLOAT",  # 1.23
-        "WORD",  # WORD
+        "INT",  # 10
     ]
 
-    t_PAREN_OPEN = r"\("
-    t_PAREN_CLOSE = r"\)"
-    t_BRACKET_OPEN = r"\["
-    t_BRACKET_CLOSE = r"\]"
-    t_BRACE_OPEN = r"\{"
-    t_BRACE_CLOSE = r"\}"
-    t_ANGLE_OPEN = r"<"
-    t_ANGLE_CLOSE = r">"
-    t_PLUS = r"\+"
-    t_MINUS = r"-"
-    t_ASTERISK = r"\*"
-    t_SLASH = r"/"
-    t_EQUAL = r"="
-    t_BACKTICK = r"`"
-    t_TILDE = r"~"
-    t_EXCLAMATION = r"!"
-    t_AT = r"@"
-    t_HASH = r"\#"
-    t_DOLLAR = r"\$"
-    t_PERCENT = r"%"
-    t_CARET = r"\^"
-    t_AMPERSAND = r"&"
-    t_BACKSLASH = r"\\"
-    t_PIPE = r"\|"
-    t_SEMICOLON = r";"
-    t_COLON = r":"
-    t_APOSTROPHE = r"'"
-    t_QUOTATION = r'"'
-    t_COMMA = r","
-    t_DOT = r"\."
-    t_QUESTION = r"\?"
-    t_WORD = r"\w+"
+    literals = """()[]{}<>+-*/=~!@#$%^&\\|;:'",.?_"""
 
-    def t_INT(self, t):
-        r"\d+(?!\.)"
-        t.value = int(t.value)
+    def t_ID(self, t: LexToken):
+        r"[a-zA-Z_]\w*"
         return t
 
-    def t_FLOAT(self, t):
+    def t_FLOAT(self, t: LexToken):
         r"\d+\.\d+"
         t.value = float(t.value)
         return t
 
+    def t_INT(self, t: LexToken):
+        r"\d+(?!\.)"
+        t.value = int(t.value)
+        return t
 
-def tokensToDict(tokens: Iterable[LexToken]) -> Dict[str, List[LexToken]]:
-    td: Dict[str, List[LexToken]] = {}
-    for t in tokens:
-        td.setdefault(t.type, [])
-        td[t.type].append(t)
-    return td
+    def t_newline(self, t: LexToken):
+        r"\n+"
+        t.lexer.lineno += len(t.value)
