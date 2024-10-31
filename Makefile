@@ -1,11 +1,11 @@
-.PHONY: tests
+.PHONY: check tests clean install uninstall build
 
 PY=python3
 
 check:
 	$(PY) -m ruff check ./icutk
 
-make tests:
+tests:
 	$(PY) -m pytest -v ./tests
 
 clean:
