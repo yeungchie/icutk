@@ -1,11 +1,12 @@
+from typing import Optional
 import logging
 
 try:
     from rich.logging import RichHandler
 
-    format = "%(message)s"
-    datefmt = None
-    handlers = [
+    _format = "%(message)s"
+    _datefmt = None
+    _handlers = [
         RichHandler(
             show_level=True,
             show_path=False,
@@ -14,18 +15,20 @@ try:
         )
     ]
 except ImportError:
-    format = "%(asctime)s | %(levelname)s | %(message)s"
-    datefmt = "%H:%M:%S"
-    handlers = None
+    _format = "%(asctime)s  %(levelname)s    %(message)s"
+    _datefmt = "%H:%M:%S"
+    _handlers = None
 
 __all__ = [
-    "logger",
+    "getLogger",
 ]
 
-logging.basicConfig(
-    format=format,
-    datefmt=datefmt,
-    level=logging.INFO,
-    handlers=handlers,
-)
-logger = logging.getLogger(__name__)
+
+def getLogger(name: Optional[str] = None) -> logging.Logger:
+    logging.basicConfig(
+        format=_format,
+        datefmt=_datefmt,
+        level=logging.INFO,
+        handlers=_handlers,
+    )
+    return logging.getLogger(name)
