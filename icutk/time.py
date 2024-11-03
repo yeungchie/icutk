@@ -1,6 +1,6 @@
 from time import perf_counter
 
-from .log import logger
+from .log import getLogger
 
 
 def measureTime(func):
@@ -12,7 +12,7 @@ def measureTime(func):
         except Exception as e:
             error = e
         end_time = perf_counter()
-        logger.info(
+        getLogger().info(
             f"Function {func.__name__!r} took {end_time - start_time} seconds to run"
         )
         if error:
