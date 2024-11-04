@@ -1,4 +1,4 @@
-from typing import Sequence, Union, Iterable, Optional
+from typing import Any, Callable, Sequence, Union, Iterable, Optional
 from queue import LifoQueue
 import re
 
@@ -56,11 +56,15 @@ def startswith(
 
 
 class LineIterator:
+    status: Any = None
+
     def __init__(
         self,
         data: Iterable[str],
         partition: Optional[str] = None,
         chomp: bool = False,
+        cb_init: Optional[Callable] = None,
+        cb_next: Optional[Callable] = None,
     ) -> None:
         if not isinstance(data, Iterable):
             raise TypeError(f"data should be an iterable - {repr(data)}")
@@ -70,7 +74,12 @@ class LineIterator:
         self.partition = partition
         self.chomp = chomp
         self.__reg: LifoQueue = LifoQueue()
-        self.__data_iter = iter(data)
+        data_sequence = tuple(data)
+        self.total_lines = len(data_sequence)
+        self.__data_iter = iter(data_sequence)
+        if isinstance(cb_init, Callable):
+            cb_init(self)
+        self.__cb_next = cb_next
 
     def __str__(self) -> str:
         return self.last1
@@ -88,6 +97,8 @@ class LineIterator:
         self.line += 1
         if self.partition:
             data = data.partition(self.partition)[0]
+        if isinstance(self.__cb_next, Callable):
+            self.__cb_next(self, data)
         return data
 
     @property
