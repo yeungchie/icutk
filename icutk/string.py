@@ -77,9 +77,10 @@ class LineIterator:
         data_sequence = tuple(data)
         self.total_lines = len(data_sequence)
         self.__data_iter = iter(data_sequence)
+        self.cb_init = cb_init
+        self.cb_next = cb_next
         if isinstance(cb_init, Callable):
             cb_init(self)
-        self.__cb_next = cb_next
 
     def __str__(self) -> str:
         return self.last1
@@ -97,8 +98,8 @@ class LineIterator:
         self.line += 1
         if self.partition:
             data = data.partition(self.partition)[0]
-        if isinstance(self.__cb_next, Callable):
-            self.__cb_next(self, data)
+        if isinstance(self.cb_next, Callable):
+            self.cb_next(self, data)
         return data
 
     @property
