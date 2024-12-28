@@ -15,7 +15,6 @@ __all__ = [
     "LexToken",
     "MetaLexer",
     "BaseLexer",
-    # "tokensToDict",
 ]
 
 
@@ -72,13 +71,6 @@ class MetaLexer:
         t = self.lexer.token()
         if t is None:
             return None
-        t = LexToken(
-            lexer=self.lexer,
-            type=t.type,
-            value=t.value,
-            lineno=t.lineno,
-            lexpos=t.lexpos,
-        )
         if self.lexer.callback["token"] is not None:
             self.lexer.callback["token"](lexer=self.lexer, token=t)
         return t
