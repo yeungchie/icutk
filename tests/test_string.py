@@ -43,6 +43,16 @@ class TestLineIterator:
 
     def test_revert(self):
         di = LineIterator(STRINGS, chomp=True)
+
+        # 读 1 行
+        assert di.next == "1 - .SUBCKT NAND2 A B VDD VSS Y"
+
+        # 回退 1 行
+        di.revert()
+        assert di.last == []
+        assert di.last1 == ""
+
+        # 读 3 行
         next_count = 3
         for _ in range(next_count):
             di.next

@@ -116,7 +116,10 @@ class LineIterator:
         for _ in range(count):
             self.__reg.put(self.last1)
             self.last.pop()
-            self.last1 = self.last[-1]
+            if len(self.last) > 0:
+                self.last1 = self.last[-1]
+            else:
+                self.last1 = ""
             self.line -= 1
 
     def __next__(self) -> str:
