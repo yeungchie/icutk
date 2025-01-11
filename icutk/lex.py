@@ -1,11 +1,11 @@
+from __future__ import annotations
 from io import TextIOWrapper
-from typing import Callable, Iterator, Optional, Union, Any
-from dataclasses import dataclass
+from typing import Iterator, Optional, Union, Any
 
 from ply.lex import (
     LexToken as _LexToken,
+    Lexer as _Lexer,
     TOKEN,
-    Lexer,
     lex,
 )
 
@@ -13,12 +13,12 @@ from ply.lex import (
 __all__ = [
     "TOKEN",
     "LexToken",
+    "Lexer",
     "MetaLexer",
     "BaseLexer",
 ]
 
 
-@dataclass
 class LexToken(_LexToken):
     lexer: Lexer
     type: str
@@ -26,8 +26,9 @@ class LexToken(_LexToken):
     lineno: int
     lexpos: int
 
-    def __repr__(self) -> str:
-        return super().__repr__()
+
+class Lexer(_Lexer):
+    parent: Any
 
 
 class MetaLexer:
@@ -41,20 +42,8 @@ class MetaLexer:
     def t_error(self, t):
         t.lexer.skip(1)
 
-    def __init__(
-        self,
-        data: Optional[str] = None,
-        *,
-        cb_input: Optional[Callable] = None,
-        cb_token: Optional[Callable] = None,
-    ):
+    def __init__(self) -> None:
         self.lexer = lex(module=self, debug=False)
-        self.lexer.callback = {
-            "input": cb_input if callable(cb_input) else None,
-            "token": cb_token if callable(cb_token) else None,
-        }
-        if data is not None:
-            self.input(data)
 
     def input(self, data: Union[str, TextIOWrapper]):
         if isinstance(data, str):
@@ -62,18 +51,14 @@ class MetaLexer:
         elif isinstance(data, TextIOWrapper):
             data = data.read()
         else:
-            raise TypeError("data must be str or TextIOWrapper")
+            raise TypeError(f"data must be str or TextIOWrapper - {data!r}")
         self.lexer.input(data)
-        if self.lexer.callback["input"] is not None:
-            self.lexer.callback["input"](lexer=self.lexer)
 
     def token(self) -> Optional[LexToken]:
-        t = self.lexer.token()
-        if t is None:
-            return None
-        if self.lexer.callback["token"] is not None:
-            self.lexer.callback["token"](lexer=self.lexer, token=t)
-        return t
+        return self.lexer.token()
+
+    def line_count(self, s: str) -> None:
+        self.lexer.lineno += s.count("\n")
 
     def __iter__(self) -> Iterator[LexToken]:
         return self
@@ -94,6 +79,11 @@ class BaseLexer(MetaLexer):
 
     literals = """()[]{}<>+-*/=~!@#$%^&\\|;:'",.?_"""
 
+    def __init__(self, data: Optional[str] = None) -> None:
+        super().__init__()
+        if data is not None:
+            self.input(data)
+
     def t_ID(self, t: LexToken):
         r"[a-zA-Z_]\w*"
         return t
@@ -110,4 +100,4 @@ class BaseLexer(MetaLexer):
 
     def t_newline(self, t: LexToken):
         r"\n+"
-        t.lexer.lineno += len(t.value)
+        self.line_count(t.value)
