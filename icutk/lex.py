@@ -4,7 +4,7 @@ from typing import Iterator, Optional, Union, Any
 
 from ply.lex import (
     LexToken as _LexToken,
-    Lexer as _Lexer,
+    Lexer,
     TOKEN,
     lex,
 )
@@ -25,10 +25,6 @@ class LexToken(_LexToken):
     value: Any
     lineno: int
     lexpos: int
-
-
-class Lexer(_Lexer):
-    parent: Any
 
 
 class MetaLexer:
