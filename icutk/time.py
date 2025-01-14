@@ -6,14 +6,24 @@ from .log import getLogger
 
 __all__ = [
     "MeasureTime",
-    "measureTime",
 ]
 
 
 class MeasureTime:
-    def __init__(self, func: Optional[Callable] = None) -> None:
+    def __init__(
+        self,
+        func: Optional[Callable] = None,
+        *,
+        mute: bool = False,
+    ) -> None:
         self.logger = getLogger()
         self.func = func
+        self.mute = mute
+        self._used = None
+
+    def info(self, *args, **kwargs) -> None:
+        if not self.mute:
+            self.logger.info(*args, **kwargs)
 
     def __call__(self, *args, **kwargs) -> Any:
         if self.func is None:
@@ -25,7 +35,7 @@ class MeasureTime:
         except Exception as e:
             error = e
         end_time = perf_counter()
-        self.logger.info(
+        self.info(
             f"Procedure {self.func.__name__!r} took {end_time - start_time} seconds to run"
         )
         if error:
@@ -37,7 +47,21 @@ class MeasureTime:
         return self
 
     def __exit__(self, *args, **kwargs) -> None:
-        self.logger.info(f"Program took {perf_counter() - self.start} seconds to run")
+        self.done()
+        self.info(f"Program took {self.used} seconds to run")
 
+    @property
+    def used(self) -> float:
+        if self._used is None:
+            return self.done()
+        return self._used
 
-measureTime = MeasureTime
+    def init(self) -> None:
+        self.start = perf_counter()
+        self.end = None
+        self._used = None
+
+    def done(self) -> float:
+        self.end = perf_counter()
+        self._used = self.end - self.start
+        return self.used
