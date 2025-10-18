@@ -1,11 +1,11 @@
 from typing import Any, Iterable, Iterator, Tuple
 
 __all__ = [
-    "Pararmeter",
+    "Parameter",
 ]
 
 
-class Pararmeter:
+class Parameter:
     def __init__(self, *args, **kwargs) -> None:
         for k, v in dict(*args, **kwargs).items():
             key = str(k)
